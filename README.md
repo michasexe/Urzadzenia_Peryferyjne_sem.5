@@ -1,1 +1,1 @@
-# Urz-dzenia_Peryferyjne_sem.5
+# Urzadzenia_Peryferyjne_sem.5
