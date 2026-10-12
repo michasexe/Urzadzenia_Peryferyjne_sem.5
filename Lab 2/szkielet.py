@@ -262,7 +262,7 @@ przycisk_odbierz_plik.pack(side=tk.LEFT, padx=5)
 tk.Label(ramka_czat, text="Pełny Log:").grid(row=1, column=0, sticky="nw")
 logi = scrolledtext.ScrolledText(ramka_czat, height=12, font=("Consolas", 9))
 logi.grid(row=2, column=0, columnspan=2, sticky="nsew")
-logi.insert(tk.END, "--- Aplikacja gotowa do pracy (Wsparcie XModem dodane) ---\n")
+logi.insert(tk.END, " Aplikacja Gotowa. \n")
 
 def zamknij_aplikacje():
     zamknij_port()
