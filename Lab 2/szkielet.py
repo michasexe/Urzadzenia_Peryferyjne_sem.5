@@ -1,11 +1,50 @@
 import tkinter as tk
 from tkinter import ttk, scrolledtext
 
-def akcja_testowa():
-    # pusta funkcja pod przyciski
-    # dodać logike na labkach
-    logi.insert(tk.END, "[SYSTEM] Kliknięto przycisk...\n")
-    logi.see(tk.END)
+def otworz_port():
+    global ser
+    
+    # Sprawdzenie, czy port nie jest przypadkiem już otwarty
+    if ser is not None and ser.is_open:
+        logi.insert(tk.END, "[INFO] Port jest już otwarty.\n")
+        logi.see(tk.END)
+        return
+        
+    try:
+        # Odczytywanie wartości bezpośrednio z interfejsu (lewa ramka)
+        wybrany_port = pola_wyboru["Port COM:"].get()
+        wybrana_predkosc = int(pola_wyboru["Prędkość:"].get())
+        
+        # Odczyt bitów danych (pyserial używa do tego specjalnych stałych)
+        bity = pola_wyboru["Bity danych:"].get()
+        if bity == "8":
+            rozmiar_bajtu = serial.EIGHTBITS
+        elif bity == "7":
+            rozmiar_bajtu = serial.SEVENBITS
+        elif bity == "6":
+            rozmiar_bajtu = serial.SIXBITS
+        else:
+            rozmiar_bajtu = serial.FIVEBITS
+            
+        # Nawiązywanie połączenia
+        ser = serial.Serial(
+            port=wybrany_port,
+            baudrate=wybrana_predkosc,
+            bytesize=rozmiar_bajtu,
+            timeout=1
+        )
+        
+        # Wypisanie komunikatu w głównym oknie logów
+        logi.insert(tk.END, f"[SUKCES] Otwarto {wybrany_port} z prędkością {wybrana_predkosc} bd.\n")
+        logi.see(tk.END)
+        
+    except serial.SerialException as e:
+        # Przechwycenie błędu (np. gdy port jest zajęty lub nie istnieje)
+        logi.insert(tk.END, f"[BŁĄD PORTU] {e}\n")
+        logi.see(tk.END)
+    except Exception as e:
+        logi.insert(tk.END, f"[BŁĄD] {e}\n")
+        logi.see(tk.END)
 
 okno = tk.Tk()
 okno.title("Komunikator Modemowy")
@@ -34,8 +73,8 @@ for i, (etykieta_tekst, wartosci) in enumerate(ustawienia):
     pola_wyboru[etykieta_tekst] = cb
 
 # łączenie z portem
-tk.Button(ramka_port, text="Otwórz Port", command=akcja_testowa, width=12).grid(row=6, column=0, pady=10)
-tk.Button(ramka_port, text="Zamknij Port", command=akcja_testowa, width=12).grid(row=6, column=1, pady=10)
+tk.Button(ramka_port, text="Otwórz Port", command=otworz_port, width=12).grid(row=6, column=0, pady=10)
+tk.Button(ramka_port, text="Zamknij Port", command=otworz_port, width=12).grid(row=6, column=1, pady=10)
 
 # sterowanie modemem
 ramka_sterowanie = tk.LabelFrame(okno, text="Sterowanie Modemem", padx=10, pady=10)
