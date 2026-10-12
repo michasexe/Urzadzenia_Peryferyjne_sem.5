@@ -33,10 +33,11 @@ for i, (etykieta_tekst, wartosci) in enumerate(ustawienia):
     cb.grid(row=i, column=1, padx=5, pady=2)
     pola_wyboru[etykieta_tekst] = cb
 
+# łączenie z portem
 tk.Button(ramka_port, text="Otwórz Port", command=akcja_testowa, width=12).grid(row=6, column=0, pady=10)
 tk.Button(ramka_port, text="Zamknij Port", command=akcja_testowa, width=12).grid(row=6, column=1, pady=10)
 
-
+# sterowanie modemem
 ramka_sterowanie = tk.LabelFrame(okno, text="Sterowanie Modemem", padx=10, pady=10)
 ramka_sterowanie.grid(row=0, column=1, sticky="ne", padx=5, pady=5)
 
