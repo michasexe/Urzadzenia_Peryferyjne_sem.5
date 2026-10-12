@@ -4,7 +4,7 @@ import serial
 import threading
 import time
 
-# Zmienne globalne
+# zmienne globalne
 ser = None
 flaga_nasluchu = False
 
@@ -18,18 +18,18 @@ def otworz_port():
         wybrany_port = pola_wyboru["Port COM:"].get()
         wybrana_predkosc = int(pola_wyboru["Prędkość:"].get())
         
-        # Konwersja ustawień bitów danych
+        # konwersja ustawień bitów danych
         bity_danych = pola_wyboru["Bity danych:"].get()
         rozmiar_bajtu = serial.EIGHTBITS if bity_danych == "8" else serial.SEVENBITS
         
-        # Konwersja parzystości
+        # konwersja parzystości
         parzystosc_wybor = pola_wyboru["Parzystość:"].get()
         if parzystosc_wybor == "None": parzystosc = serial.PARITY_NONE
         elif parzystosc_wybor == "Even": parzystosc = serial.PARITY_EVEN
         elif parzystosc_wybor == "Odd": parzystosc = serial.PARITY_ODD
         else: parzystosc = serial.PARITY_NONE
             
-        # Konwersja bitów stopu
+        # konwersja bitów stopu
         stop_wybor = pola_wyboru["Bity stopu:"].get()
         if stop_wybor == "1": bity_stopu = serial.STOPBITS_ONE
         elif stop_wybor == "2": bity_stopu = serial.STOPBITS_TWO
@@ -47,7 +47,7 @@ def otworz_port():
         logi.insert(tk.END, f"[SYSTEM] Połączono z portem {wybrany_port}\n")
         logi.see(tk.END)
         
-        # Uruchomienie wątku nasłuchującego
+        # uruchomienie wątku nasłuchującego
         flaga_nasluchu = True
         watek = threading.Thread(target=nasluchuj_port, daemon=True)
         watek.start()
@@ -59,7 +59,7 @@ def zamknij_port():
     global ser, flaga_nasluchu
     if ser is not None and ser.is_open:
         flaga_nasluchu = False
-        time.sleep(0.5) # Czekamy na bezpieczne zamknięcie wątku
+        time.sleep(0.5)
         ser.close()
         logi.insert(tk.END, "[SYSTEM] Rozłączono z portem.\n")
         logi.see(tk.END)
@@ -70,7 +70,6 @@ def nasluchuj_port():
         if ser and ser.is_open and ser.in_waiting > 0:
             try:
                 dane = ser.read(ser.in_waiting).decode('ascii', errors='ignore')
-                # Bezpieczne wstrzyknięcie tekstu do GUI z innego wątku
                 okno.after(0, lambda d=dane: aktualizuj_logi(d))
             except Exception:
                 pass
@@ -98,7 +97,6 @@ def odbierz_ata():
 
 def zerwij_ath():
     if ser and ser.is_open:
-        # Dokładne odwzorowanie sekwencji rozłączania z C#
         ser.write(b"+++")
         time.sleep(1)
         ser.write(b"ATH\r\n")
@@ -119,13 +117,12 @@ def wyslij_wiadomosc():
     else:
         logi.insert(tk.END, "[BŁĄD] Brak połączenia z portem!\n")
 
-# --- GŁÓWNE OKNO ---
 okno = tk.Tk()
 okno.title("Komunikator Modemowy")
 okno.geometry("750x550")
 okno.configure(padx=10, pady=10)
 
-# --- RAMKA: USTAWIENIA PORTU ---
+# ustawienia portu
 ramka_port = tk.LabelFrame(okno, text="Konfiguracja Połączenia", padx=10, pady=10)
 ramka_port.grid(row=0, column=0, sticky="nw", padx=5, pady=5)
 
@@ -142,8 +139,8 @@ pola_wyboru = {}
 for i, (etykieta_tekst, wartosci) in enumerate(ustawienia):
     tk.Label(ramka_port, text=etykieta_tekst).grid(row=i, column=0, sticky="w", pady=2)
     cb = ttk.Combobox(ramka_port, values=wartosci, width=22, state="readonly")
-    if etykieta_tekst == "Prędkość:": cb.current(4) # Domyślnie 9600
-    elif etykieta_tekst == "Bity danych:": cb.current(3) # Domyślnie 8
+    if etykieta_tekst == "Prędkość:": cb.current(4)
+    elif etykieta_tekst == "Bity danych:": cb.current(3)
     else: cb.current(0)
     cb.grid(row=i, column=1, padx=5, pady=2)
     pola_wyboru[etykieta_tekst] = cb
@@ -151,7 +148,7 @@ for i, (etykieta_tekst, wartosci) in enumerate(ustawienia):
 tk.Button(ramka_port, text="Otwórz Port", command=otworz_port, width=12, bg="lightgreen").grid(row=6, column=0, pady=10)
 tk.Button(ramka_port, text="Zamknij Port", command=zamknij_port, width=12, bg="salmon").grid(row=6, column=1, pady=10)
 
-# --- RAMKA: STEROWANIE MODEMEM ---
+# sterowanie modemem
 ramka_sterowanie = tk.LabelFrame(okno, text="Sterowanie Modemem", padx=10, pady=10)
 ramka_sterowanie.grid(row=0, column=1, sticky="ne", padx=5, pady=5)
 
@@ -163,7 +160,7 @@ tk.Button(ramka_sterowanie, text="Zadzwoń (ATD)", command=dzwon_atd, width=15).
 tk.Button(ramka_sterowanie, text="Odbierz (ATA)", command=odbierz_ata, width=15).grid(row=2, column=0, columnspan=2, pady=5)
 tk.Button(ramka_sterowanie, text="Zerwij (+++ / ATH)", command=zerwij_ath, width=15).grid(row=3, column=0, columnspan=2, pady=5)
 
-# --- RAMKA: KOMUNIKACJA I LOGI ---
+# komunikacja i logi
 ramka_czat = tk.LabelFrame(okno, text="Wymiana Wiadomości", padx=10, pady=10)
 ramka_czat.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
 
@@ -188,7 +185,6 @@ logi = scrolledtext.ScrolledText(ramka_czat, height=12, font=("Consolas", 9))
 logi.grid(row=2, column=0, columnspan=2, sticky="nsew")
 logi.insert(tk.END, "--- Aplikacja gotowa do pracy ---\n")
 
-# Procedura zamykania aplikacji
 def zamknij_aplikacje():
     zamknij_port()
     okno.destroy()
