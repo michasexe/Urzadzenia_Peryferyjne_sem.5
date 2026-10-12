@@ -1,12 +1,89 @@
 import tkinter as tk
-from tkinter import ttk, scrolledtext
+from tkinter import ttk, scrolledtext, filedialog
 import serial
 import threading
 import time
+import os
+from xmodem import XMODEM
 
 # zmienne globalne
 ser = None
 flaga_nasluchu = False
+
+# funkcje pomocnicze dla XModem
+def getc(size, timeout=1):
+    ser.timeout = timeout
+    return ser.read(size) or None
+
+def putc(data, timeout=1):
+    return ser.write(data)
+
+def wyslij_plik_xmodem():
+    if not ser or not ser.is_open:
+        logi.insert(tk.END, "[BŁĄD] Brak połączenia z portem!\n")
+        return
+
+    sciezka = filedialog.askopenfilename(title="Wybierz plik do wysłania")
+    if not sciezka:
+        return
+
+    def proces_wysylania():
+        global flaga_nasluchu
+        flaga_nasluchu = False
+        time.sleep(0.5)
+        
+        okno.after(0, lambda: aktualizuj_logi(f"[XMODEM] Wysyłanie: {os.path.basename(sciezka)}...\n"))
+        
+        try:
+            modem = XMODEM(getc, putc)
+            with open(sciezka, 'rb') as stream:
+                status = modem.send(stream)
+                
+            if status:
+                okno.after(0, lambda: aktualizuj_logi("[XMODEM] Plik wysłany pomyślnie!\n"))
+            else:
+                okno.after(0, lambda: aktualizuj_logi("[XMODEM] Nie udało się wysłać pliku.\n"))
+        except Exception as e:
+            okno.after(0, lambda: aktualizuj_logi(f"[XMODEM BŁĄD] {e}\n"))
+        finally:
+
+            flaga_nasluchu = True
+            threading.Thread(target=nasluchuj_port, daemon=True).start()
+
+    threading.Thread(target=proces_wysylania, daemon=True).start()
+
+def odbierz_plik_xmodem():
+    if not ser or not ser.is_open:
+        logi.insert(tk.END, "[BŁĄD] Brak połączenia z portem!\n")
+        return
+
+    sciezka = filedialog.asksaveasfilename(title="Gdzie zapisać odebrany plik?")
+    if not sciezka:
+        return
+
+    def proces_odbierania():
+        global flaga_nasluchu
+        flaga_nasluchu = False
+        time.sleep(0.5)
+        
+        okno.after(0, lambda: aktualizuj_logi("[XMODEM] Oczekiwanie na plik od drugiego modemu...\n"))
+        
+        try:
+            modem = XMODEM(getc, putc)
+            with open(sciezka, 'wb') as stream:
+                status = modem.recv(stream)
+                
+            if status:
+                okno.after(0, lambda: aktualizuj_logi(f"[XMODEM] Plik odebrany i zapisany jako {os.path.basename(sciezka)}!\n"))
+            else:
+                okno.after(0, lambda: aktualizuj_logi("[XMODEM] Błąd podczas odbierania pliku.\n"))
+        except Exception as e:
+            okno.after(0, lambda: aktualizuj_logi(f"[XMODEM BŁĄD] {e}\n"))
+        finally:
+            flaga_nasluchu = True
+            threading.Thread(target=nasluchuj_port, daemon=True).start()
+
+    threading.Thread(target=proces_odbierania, daemon=True).start()
 
 def otworz_port():
     global ser, flaga_nasluchu
@@ -18,18 +95,15 @@ def otworz_port():
         wybrany_port = pola_wyboru["Port COM:"].get()
         wybrana_predkosc = int(pola_wyboru["Prędkość:"].get())
         
-        # konwersja ustawień bitów danych
         bity_danych = pola_wyboru["Bity danych:"].get()
         rozmiar_bajtu = serial.EIGHTBITS if bity_danych == "8" else serial.SEVENBITS
         
-        # konwersja parzystości
         parzystosc_wybor = pola_wyboru["Parzystość:"].get()
         if parzystosc_wybor == "None": parzystosc = serial.PARITY_NONE
         elif parzystosc_wybor == "Even": parzystosc = serial.PARITY_EVEN
         elif parzystosc_wybor == "Odd": parzystosc = serial.PARITY_ODD
         else: parzystosc = serial.PARITY_NONE
             
-        # konwersja bitów stopu
         stop_wybor = pola_wyboru["Bity stopu:"].get()
         if stop_wybor == "1": bity_stopu = serial.STOPBITS_ONE
         elif stop_wybor == "2": bity_stopu = serial.STOPBITS_TWO
@@ -47,7 +121,6 @@ def otworz_port():
         logi.insert(tk.END, f"[SYSTEM] Połączono z portem {wybrany_port}\n")
         logi.see(tk.END)
         
-        # uruchomienie wątku nasłuchującego
         flaga_nasluchu = True
         watek = threading.Thread(target=nasluchuj_port, daemon=True)
         watek.start()
@@ -59,7 +132,7 @@ def zamknij_port():
     global ser, flaga_nasluchu
     if ser is not None and ser.is_open:
         flaga_nasluchu = False
-        time.sleep(0.5)
+        time.sleep(0.5) 
         ser.close()
         logi.insert(tk.END, "[SYSTEM] Rozłączono z portem.\n")
         logi.see(tk.END)
@@ -119,7 +192,7 @@ def wyslij_wiadomosc():
 
 okno = tk.Tk()
 okno.title("Komunikator Modemowy")
-okno.geometry("750x550")
+okno.geometry("800x550")
 okno.configure(padx=10, pady=10)
 
 # ustawienia portu
@@ -139,8 +212,8 @@ pola_wyboru = {}
 for i, (etykieta_tekst, wartosci) in enumerate(ustawienia):
     tk.Label(ramka_port, text=etykieta_tekst).grid(row=i, column=0, sticky="w", pady=2)
     cb = ttk.Combobox(ramka_port, values=wartosci, width=22, state="readonly")
-    if etykieta_tekst == "Prędkość:": cb.current(4)
-    elif etykieta_tekst == "Bity danych:": cb.current(3)
+    if etykieta_tekst == "Prędkość:": cb.current(4) 
+    elif etykieta_tekst == "Bity danych:": cb.current(3) 
     else: cb.current(0)
     cb.grid(row=i, column=1, padx=5, pady=2)
     pola_wyboru[etykieta_tekst] = cb
@@ -161,7 +234,7 @@ tk.Button(ramka_sterowanie, text="Odbierz (ATA)", command=odbierz_ata, width=15)
 tk.Button(ramka_sterowanie, text="Zerwij (+++ / ATH)", command=zerwij_ath, width=15).grid(row=3, column=0, columnspan=2, pady=5)
 
 # komunikacja i logi
-ramka_czat = tk.LabelFrame(okno, text="Wymiana Wiadomości", padx=10, pady=10)
+ramka_czat = tk.LabelFrame(okno, text="Wymiana Wiadomości i Plików", padx=10, pady=10)
 ramka_czat.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
 
 okno.grid_columnconfigure(1, weight=1)
@@ -177,13 +250,19 @@ pole_wiadomosc = tk.Entry(ramka_wysylanie)
 pole_wiadomosc.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
 okno.bind('<Return>', lambda event: wyslij_wiadomosc())
-przycisk_wyslij = tk.Button(ramka_wysylanie, text="Wyślij", command=wyslij_wiadomosc, width=10)
-przycisk_wyslij.pack(side=tk.RIGHT)
+przycisk_wyslij = tk.Button(ramka_wysylanie, text="Wyślij Teks", command=wyslij_wiadomosc, width=10)
+przycisk_wyslij.pack(side=tk.LEFT, padx=5)
+
+przycisk_wyslij_plik = tk.Button(ramka_wysylanie, text="Wyślij Plik", command=wyslij_plik_xmodem, width=10)
+przycisk_wyslij_plik.pack(side=tk.LEFT, padx=5)
+
+przycisk_odbierz_plik = tk.Button(ramka_wysylanie, text="Odbierz Plik", command=odbierz_plik_xmodem, width=10)
+przycisk_odbierz_plik.pack(side=tk.LEFT, padx=5)
 
 tk.Label(ramka_czat, text="Pełny Log:").grid(row=1, column=0, sticky="nw")
 logi = scrolledtext.ScrolledText(ramka_czat, height=12, font=("Consolas", 9))
 logi.grid(row=2, column=0, columnspan=2, sticky="nsew")
-logi.insert(tk.END, "--- Aplikacja gotowa do pracy ---\n")
+logi.insert(tk.END, "--- Aplikacja gotowa do pracy (Wsparcie XModem dodane) ---\n")
 
 def zamknij_aplikacje():
     zamknij_port()
