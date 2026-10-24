@@ -3,7 +3,7 @@ import socket
 import subprocess
 
 def wlacz_wifi():
-    # Odblokowuje kartę sieciową w systemach Linux (Raspberry Pi)
+    # odblokowuje kartę sieciową w systemach Linux (Raspberry Pi)
     try:
         subprocess.run(["rfkill", "unblock", "wifi"], check=True)
         status.config(text="WiFi włączone", fg="green")
@@ -11,7 +11,7 @@ def wlacz_wifi():
         status.config(text=f"Błąd włączania WiFi: {e}", fg="red")
 
 def wylacz_wifi():
-    # Blokuje kartę sieciową w systemach Linux
+    # blokuje kartę sieciową w systemach Linux
     try:
         subprocess.run(["rfkill", "block", "wifi"], check=True)
         status.config(text="WiFi wyłączone", fg="orange")
@@ -23,7 +23,7 @@ def polacz_i_wyslij():
     port = int(pole_port.get())
     wiadomosc = pole_wiadomosc.get()
     
-    # Tworzenie gniazda TCP i wysyłanie danych
+    # tworzenie gniazda TCP i wysyłanie danych
     try:
         klient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         klient.connect((ip, port))
@@ -33,7 +33,6 @@ def polacz_i_wyslij():
     except Exception as e:
         status.config(text=f"Błąd połączenia: {e}", fg="red")
 
-# Tworzenie głównego okna GUI
 root = tk.Tk()
 root.title("Transmisja WiFi - CW 14")
 root.geometry("300x350")
@@ -45,12 +44,12 @@ tk.Button(root, text="Wyłącz WiFi", command=wylacz_wifi, width=15).pack()
 tk.Label(root, text="\nIP docelowe:").pack()
 pole_ip = tk.Entry(root)
 pole_ip.pack()
-pole_ip.insert(0, "192.168.1.100") # Przykładowe IP do zmiany
+pole_ip.insert(0, "192.168.1.100") # przykładowe IP
 
 tk.Label(root, text="Port docelowy:").pack()
 pole_port = tk.Entry(root)
 pole_port.pack()
-pole_port.insert(0, "5000") # Przykładowy port
+pole_port.insert(0, "5000") # przykładowy port
 
 tk.Label(root, text="Wiadomość:").pack()
 pole_wiadomosc = tk.Entry(root)
