@@ -11,7 +11,7 @@ def generuj_kod():
     
     # EAN13 wymaga 12 początkowych cyfr (13. jest generowana automatycznie jako kontrolna)
     if not wprowadzone_dane.isdigit():
-        messagebox.showerror("Błąd", "Wprowadź tylko cyfry!")
+        messagebox.showerror("Błąd", "Wprowadź tylko cyfry.")
         return
         
     if len(wprowadzone_dane) not in [12, 13]:
@@ -41,7 +41,7 @@ def generuj_kod():
         label_obraz.config(image=zdjecie_tk)
         label_obraz.image = zdjecie_tk # Utrzymanie referencji, by Garbage Collector nie wyczyścił obrazka
         
-        label_status.config(text=f"Sukces! Plik zapisany jako: {nazwa_pliku}.png w folderze programu.", fg="green")
+        label_status.config(text=f"Plik zapisany jako: {nazwa_pliku}.png w folderze programu.", fg="green")
         
     except Exception as e:
         messagebox.showerror("Błąd krytyczny", f"Wystąpił błąd: {e}")
